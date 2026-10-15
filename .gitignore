@@ -1,0 +1,53 @@
+﻿# .NET build outputs
+**/bin/
+**/obj/
+**/Debug/
+**/Release/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains
+.idea/
+
+# Secrets and environment variables
+secrets.json
+**/secrets.json
+.env
+.env.*
+!.env.example
+
+# Local app configuration
+appsettings.Development.json
+**/appsettings.Development.json
+appsettings.Local.json
+**/appsettings.Local.json
+
+# Database and backups
+*.bak
+*.bacpac
+*.mdf
+*.ldf
+*.sqlite
+*.db
+
+# Logs
+*.log
+logs/
+Logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Operating system
+.DS_Store
+Thumbs.db
