@@ -35,13 +35,26 @@ public class ArticlesController : ControllerBase
                 message = "Phân trang không hợp lệ."
             });
 
+        // FIX:
+        // Cột PublishedAt trong PostgreSQL đang được ánh xạ
+        // thành timestamp without time zone.
+        //
+        // Vẫn lấy thời gian UTC, nhưng sử dụng Kind.Unspecified
+        // để Npgsql so sánh với đúng kiểu timestamp của cột.
+        //
+        // Chỉ khai báo biến này MỘT LẦN.
+        var nowUtc = DateTime.SpecifyKind(
+            DateTime.UtcNow,
+            DateTimeKind.Unspecified
+        );
+
         var query = _db.Articles
             .AsNoTracking()
             .Where(a =>
                 a.Status == "published" &&
                 a.Category.IsActive &&
                 a.PublishedAt != null &&
-                a.PublishedAt <= DateTime.UtcNow);
+                a.PublishedAt <= nowUtc);
 
         var total = await query.CountAsync(ct);
 
@@ -81,6 +94,14 @@ public class ArticlesController : ControllerBase
         string slug,
         CancellationToken ct)
     {
+        // FIX:
+        // Sử dụng cùng cách xử lý thời gian như GetPublic()
+        // để tránh lỗi timestamp khi xem chi tiết bài viết.
+        var nowUtc = DateTime.SpecifyKind(
+            DateTime.UtcNow,
+            DateTimeKind.Unspecified
+        );
+
         var data = await _db.Articles
             .AsNoTracking()
             .Where(a =>
@@ -88,7 +109,7 @@ public class ArticlesController : ControllerBase
                 a.Status == "published" &&
                 a.Category.IsActive &&
                 a.PublishedAt != null &&
-                a.PublishedAt <= DateTime.UtcNow)
+                a.PublishedAt <= nowUtc)
             .Select(a => new
             {
                 a.ArticleId,
