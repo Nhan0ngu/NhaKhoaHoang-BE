@@ -28,6 +28,10 @@ public class ConsultationsController : ControllerBase
         [FromBody] ConsultationCreateRequest request,
         CancellationToken cancellationToken)
     {
+        // ==========================================
+        // 1. VALIDATE INPUT
+        // ==========================================
+
         var fullName = request.FullName.Trim();
         var phone = request.Phone.Trim();
 
@@ -39,6 +43,10 @@ public class ConsultationsController : ControllerBase
                 message = "Họ tên không hợp lệ."
             });
         }
+
+        // ==========================================
+        // 2. CHECK SERVICE
+        // ==========================================
 
         var serviceExists = await _db.Services
             .AsNoTracking()
@@ -57,6 +65,12 @@ public class ConsultationsController : ControllerBase
             });
         }
 
+        // ==========================================
+        // 3. PREPARE CONSULTATION
+        // ==========================================
+
+        var now = DateTime.UtcNow;
+
         var consultation = new ConsultationRequest
         {
             FullName = fullName,
@@ -65,23 +79,79 @@ public class ConsultationsController : ControllerBase
             Phone = phone,
             ServiceId = request.ServiceId,
             Status = "pending",
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = now
         };
+
+        // ==========================================
+        // 4. TRANSACTION
+        // ==========================================
+        // Consultation và Notification phải được
+        // lưu thành công cùng nhau.
+        //
+        // Nếu một thao tác gặp lỗi, transaction
+        // không được commit.
+
+        await using var transaction =
+            await _db.Database.BeginTransactionAsync(
+                cancellationToken);
+
+        // ==========================================
+        // 5. SAVE CONSULTATION
+        // ==========================================
 
         _db.ConsultationRequests.Add(consultation);
 
-        await _db.SaveChangesAsync(cancellationToken);
+        await _db.SaveChangesAsync(
+            cancellationToken);
 
-        // Không trả lại số điện thoại và dữ liệu cá nhân.
-        return StatusCode(StatusCodes.Status201Created, new
+        // Sau SaveChanges, EF Core nhận được ID
+        // từ cột IDENTITY của PostgreSQL.
+
+        // ==========================================
+        // 6. CREATE ADMIN NOTIFICATION
+        // ==========================================
+
+        var notification = new AdminNotification
         {
-            success = true,
-            message = "Yêu cầu tư vấn đã được ghi nhận.",
-            data = new
+            ConsultationId = consultation.ConsultationId,
+            Type = "new_consultation",
+            CreatedAt = now
+        };
+
+        _db.AdminNotifications.Add(notification);
+
+        await _db.SaveChangesAsync(
+            cancellationToken);
+
+        // ==========================================
+        // 7. COMMIT TRANSACTION
+        // ==========================================
+
+        await transaction.CommitAsync(
+            cancellationToken);
+
+        // ==========================================
+        // 8. RESPONSE
+        // ==========================================
+        // Không trả số điện thoại hoặc thông tin
+        // cá nhân của khách hàng.
+        //
+        // Giữ nguyên cấu trúc response cũ
+        // để Frontend không bị ảnh hưởng.
+
+        return StatusCode(
+            StatusCodes.Status201Created,
+            new
             {
-                consultationId = consultation.ConsultationId,
-                status = consultation.Status
-            }
-        });
+                success = true,
+                message =
+                    "Yêu cầu tư vấn đã được ghi nhận.",
+                data = new
+                {
+                    consultationId =
+                        consultation.ConsultationId,
+                    status = consultation.Status
+                }
+            });
     }
 }

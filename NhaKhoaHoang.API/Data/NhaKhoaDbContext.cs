@@ -14,6 +14,10 @@ public partial class NhaKhoaDbContext : DbContext
     {
     }
 
+    // ==========================================
+    // CÁC BẢNG HIỆN TẠI
+    // ==========================================
+
     public virtual DbSet<AdminUser> AdminUsers { get; set; }
     public virtual DbSet<Article> Articles { get; set; }
     public virtual DbSet<ArticleCategory> ArticleCategories { get; set; }
@@ -29,11 +33,18 @@ public partial class NhaKhoaDbContext : DbContext
     public virtual DbSet<SitePage> SitePages { get; set; }
     public virtual DbSet<SiteSetting> SiteSettings { get; set; }
 
+    // ==========================================
+    // HỆ THỐNG THÔNG BÁO ADMIN
+    // ==========================================
+
+    public virtual DbSet<AdminNotification> AdminNotifications { get; set; }
+    public virtual DbSet<AdminNotificationRead> AdminNotificationReads { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // ==================================================
+        // ==========================================
         // 1. ADMIN USERS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<AdminUser>(entity =>
         {
@@ -52,9 +63,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Username).HasMaxLength(100);
         });
 
-        // ==================================================
+        // ==========================================
         // 2. ARTICLE CATEGORIES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ArticleCategory>(entity =>
         {
@@ -68,9 +79,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Slug).HasMaxLength(160);
         });
 
-        // ==================================================
+        // ==========================================
         // 3. SERVICE CATEGORIES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ServiceCategory>(entity =>
         {
@@ -88,9 +99,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Slug).HasMaxLength(160);
         });
 
-        // ==================================================
+        // ==========================================
         // 4. BRANCHES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<Branch>(entity =>
         {
@@ -108,9 +119,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Phone).HasMaxLength(20);
         });
 
-        // ==================================================
+        // ==========================================
         // 5. DOCTORS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<Doctor>(entity =>
         {
@@ -125,9 +136,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Specialty).HasMaxLength(200);
         });
 
-        // ==================================================
+        // ==========================================
         // 6. SERVICES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<Service>(entity =>
         {
@@ -152,9 +163,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
-        // ==================================================
+        // ==========================================
         // 7. ARTICLES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<Article>(entity =>
         {
@@ -190,9 +201,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
-        // ==================================================
+        // ==========================================
         // 8. CHAT FAQS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ChatFaq>(entity =>
         {
@@ -216,9 +227,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .HasForeignKey(d => d.ServiceId);
         });
 
-        // ==================================================
+        // ==========================================
         // 9. CONSULTATION REQUESTS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ConsultationRequest>(entity =>
         {
@@ -230,9 +241,6 @@ public partial class NhaKhoaDbContext : DbContext
             entity.HasIndex(e => new { e.Status, e.CreatedAt })
                 .IsDescending(false, true);
 
-            // SQL Server: tinyint -> C# byte
-            // PostgreSQL: smallint -> C# short
-            // Giữ nguyên model byte cho API hiện tại.
             entity.Property(e => e.Age)
                 .HasConversion<short>()
                 .HasColumnType("smallint");
@@ -255,9 +263,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
-        // ==================================================
+        // ==========================================
         // 10. MEDIA FILES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<MediaFile>(entity =>
         {
@@ -282,9 +290,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .HasForeignKey(d => d.UploadedBy);
         });
 
-        // ==================================================
+        // ==========================================
         // 11. SERVICE FAQS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ServiceFaq>(entity =>
         {
@@ -304,9 +312,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
-        // ==================================================
+        // ==========================================
         // 12. SERVICE PRICES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<ServicePrice>(entity =>
         {
@@ -332,9 +340,9 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
-        // ==================================================
+        // ==========================================
         // 13. SITE PAGES
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<SitePage>(entity =>
         {
@@ -353,9 +361,9 @@ public partial class NhaKhoaDbContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(250);
         });
 
-        // ==================================================
+        // ==========================================
         // 14. SITE SETTINGS
-        // ==================================================
+        // ==========================================
 
         modelBuilder.Entity<SiteSetting>(entity =>
         {
@@ -376,16 +384,73 @@ public partial class NhaKhoaDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
         });
 
-        // ==================================================
-        // 15. POSTGRESQL TIMESTAMP COMPATIBILITY
-        // ==================================================
-        // Neon đã tạo datetime2 tương ứng thành
+        // ==========================================
+        // 15. ADMIN NOTIFICATIONS (NEW)
+        // ==========================================
+
+        modelBuilder.Entity<AdminNotification>(entity =>
+        {
+            entity.ToTable("AdminNotifications");
+
+            entity.HasKey(e => e.NotificationId);
+
+            entity.HasIndex(e => e.ConsultationId)
+                .IsUnique();
+
+            entity.HasIndex(e => e.CreatedAt)
+                .IsDescending();
+
+            entity.Property(e => e.Type)
+                .HasMaxLength(50)
+                .HasDefaultValue("new_consultation");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(now() at time zone 'UTC')");
+
+            entity.HasOne(e => e.Consultation)
+                .WithMany()
+                .HasForeignKey(e => e.ConsultationId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ==========================================
+        // 16. ADMIN NOTIFICATION READS (NEW)
+        // ==========================================
+
+        modelBuilder.Entity<AdminNotificationRead>(entity =>
+        {
+            entity.ToTable("AdminNotificationReads");
+
+            entity.HasKey(e => new
+            {
+                e.NotificationId,
+                e.AdminId
+            });
+
+            entity.Property(e => e.ReadAt)
+                .HasDefaultValueSql("(now() at time zone 'UTC')");
+
+            entity.HasOne(e => e.Notification)
+                .WithMany(n => n.Reads)
+                .HasForeignKey(e => e.NotificationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Admin)
+                .WithMany()
+                .HasForeignKey(e => e.AdminId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // ==========================================
+        // 17. POSTGRESQL TIMESTAMP COMPATIBILITY
+        // ==========================================
+
+        // Neon lưu thời gian dưới dạng:
         // timestamp without time zone.
         //
-        // Quy ước của ứng dụng: thời gian lưu theo UTC.
-        // PostgreSQL timestamp không chứa thông tin múi giờ.
-        // Converter giúp giữ quy ước UTC của ứng dụng
-        // mà không thay đổi cấu trúc 14 bảng đã tạo.
+        // Ứng dụng sử dụng quy ước UTC.
+        // Giữ nguyên converter đang dùng để
+        // không ảnh hưởng các tính năng cũ.
 
         var dateTimeConverter =
             new ValueConverter<DateTime, DateTime>(
