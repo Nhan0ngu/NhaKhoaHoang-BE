@@ -273,7 +273,7 @@ public partial class NhaKhoaDbContext : DbContext
             entity.ToTable("MediaFiles");
             entity.HasKey(e => e.MediaId);
 
-            // Lưu nội dung ảnh trực tiếp trong Neon PostgreSQL.
+            // Lưu nội dung ảnh trực tiếp trong Neon PostgreSQL.f
             entity.Property(e => e.ImageData)
                 .HasColumnName("ImageData")
                 .HasColumnType("bytea")
@@ -324,29 +324,65 @@ public partial class NhaKhoaDbContext : DbContext
         // 12. SERVICE PRICES
         // ==========================================
 
+
+        // ==========================================
+        // 12. SERVICE PRICES
+        // ==========================================
+
         modelBuilder.Entity<ServicePrice>(entity =>
         {
             entity.ToTable("ServicePrices");
+
             entity.HasKey(e => e.PriceId);
 
             entity.HasIndex(e => e.ServiceId);
 
+            // Giá cố định - cột hiện có.
             entity.Property(e => e.Amount)
                 .HasColumnType("numeric(18,2)");
+
+            // Loại giá:
+            // fixed, range, consultation.
+            entity.Property(e => e.PriceType)
+                .HasColumnName("PriceType")
+                .HasMaxLength(20)
+                .HasDefaultValue("fixed")
+                .IsRequired();
+
+            // Giá thấp nhất của khoảng giá.
+            entity.Property(e => e.MinAmount)
+                .HasColumnName("MinAmount")
+                .HasColumnType("numeric(18,2)")
+                .IsRequired(false);
+
+            // Giá cao nhất của khoảng giá.
+            entity.Property(e => e.MaxAmount)
+                .HasColumnName("MaxAmount")
+                .HasColumnType("numeric(18,2)")
+                .IsRequired(false);
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(now() at time zone 'UTC')");
 
-            entity.Property(e => e.Note).HasMaxLength(1000);
-            entity.Property(e => e.PriceCode).HasMaxLength(30);
-            entity.Property(e => e.PriceName).HasMaxLength(200);
-            entity.Property(e => e.Unit).HasMaxLength(50);
+            entity.Property(e => e.Note)
+                .HasMaxLength(1000);
 
+            entity.Property(e => e.PriceCode)
+                .HasMaxLength(30);
+
+            entity.Property(e => e.PriceName)
+                .HasMaxLength(200);
+
+            entity.Property(e => e.Unit)
+                .HasMaxLength(50);
+
+            // Giữ nguyên quan hệ bảng giá -> dịch vụ chính.
             entity.HasOne(d => d.Service)
                 .WithMany(p => p.ServicePrices)
                 .HasForeignKey(d => d.ServiceId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
         });
+
 
         // ==========================================
         // 13. SITE PAGES

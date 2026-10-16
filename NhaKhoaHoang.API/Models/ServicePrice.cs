@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 
 namespace NhaKhoaHoang.API.Models;
@@ -13,7 +14,20 @@ public partial class ServicePrice
 
     public string PriceName { get; set; } = null!;
 
+    // Giá cố định, giữ nguyên thuộc tính cũ.
     public decimal? Amount { get; set; }
+
+    // Loại giá:
+    // fixed        = Giá cố định
+    // range        = Giá từ - đến
+    // consultation = Tùy trường hợp
+    public string PriceType { get; set; } = "fixed";
+
+    // Giá thấp nhất khi PriceType = "range".
+    public decimal? MinAmount { get; set; }
+
+    // Giá cao nhất khi PriceType = "range".
+    public decimal? MaxAmount { get; set; }
 
     public string? Unit { get; set; }
 
