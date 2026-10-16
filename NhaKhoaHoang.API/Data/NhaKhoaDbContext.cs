@@ -267,10 +267,17 @@ public partial class NhaKhoaDbContext : DbContext
         // 10. MEDIA FILES
         // ==========================================
 
+
         modelBuilder.Entity<MediaFile>(entity =>
         {
             entity.ToTable("MediaFiles");
             entity.HasKey(e => e.MediaId);
+
+            // Lưu nội dung ảnh trực tiếp trong Neon PostgreSQL.
+            entity.Property(e => e.ImageData)
+                .HasColumnName("ImageData")
+                .HasColumnType("bytea")
+                .IsRequired(false);
 
             entity.Property(e => e.ContentType).HasMaxLength(100);
 
@@ -289,6 +296,7 @@ public partial class NhaKhoaDbContext : DbContext
                 .WithMany(p => p.MediaFiles)
                 .HasForeignKey(d => d.UploadedBy);
         });
+
 
         // ==========================================
         // 11. SERVICE FAQS

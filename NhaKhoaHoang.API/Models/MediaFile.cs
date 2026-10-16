@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 
 namespace NhaKhoaHoang.API.Models;
@@ -22,6 +23,11 @@ public partial class MediaFile
     public int? UploadedBy { get; set; }
 
     public DateTime CreatedAt { get; set; }
+
+    // Nội dung ảnh được lưu trực tiếp trong Neon PostgreSQL.
+    // Ánh xạ đến cột "ImageData" kiểu BYTEA.
+    // Nullable để tương thích với các bản ghi cũ.
+    public byte[]? ImageData { get; set; }
 
     public virtual AdminUser? UploadedByNavigation { get; set; }
 }
