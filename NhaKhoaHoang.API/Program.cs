@@ -9,6 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NhaKhoaHoang.API.Controllers;
 using NhaKhoaHoang.API.Data;
+using NhaKhoaHoang.API.Hubs;
 using NhaKhoaHoang.API.Middleware;
 using NhaKhoaHoang.API.Services;
 
@@ -62,7 +63,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials(); // SignalR negotiation cross-origin.
         }
     });
 });
@@ -160,6 +162,10 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+// SignalR chi phat thong bao noi dung CONG KHAI.
+builder.Services.AddSignalR();
+builder.Services.AddScoped<PublicContentChangeFilter>();
+
 // ==================================================
 // 4. APPLICATION SERVICES
 // ==================================================
@@ -181,7 +187,8 @@ builder.Services.AddHttpClient<OpenAiChatService>(client =>
 // ==================================================
 
 builder.Services
-    .AddControllers()
+    .AddControllers(options =>
+        options.Filters.AddService<PublicContentChangeFilter>())
     .AddMvcOptions(options =>
     {
         // Tạm thời vô hiệu hóa Media API
@@ -382,6 +389,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Hub chỉ có thể nhận thông báo; client không được gọi phương thức CRUD.
+app.MapHub<PublicContentHub>("/hubs/public-content")
+    .RequireCors(frontendCorsPolicy);
 
 // ==================================================
 // 12. RUN APPLICATION
