@@ -166,6 +166,12 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<AdminAuthService>();
 
+// Chatbot OpenAI: key chỉ đọc từ cấu hình Backend (Render Environment).
+builder.Services.AddHttpClient<OpenAiChatService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 // Azure tạm thời chưa sử dụng.
 // Không đăng ký MediaStorageService
 // khi chưa có Azure Connection String.
@@ -238,6 +244,20 @@ builder.Services.AddRateLimiter(options =>
 
                         AutoReplenishment = true
                     }));
+
+    // Chatbot: 12 lượt / 10 phút / IP, giới hạn sử dụng OpenAI.
+    options.AddPolicy(
+        "chat",
+        context =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: GetClientPartitionKey(context, "chat"),
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 12,
+                    Window = TimeSpan.FromMinutes(10),
+                    QueueLimit = 0,
+                    AutoReplenishment = true
+                }));
 
     // Admin Login:
     // 5 requests / 15 minutes / IP
