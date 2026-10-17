@@ -111,13 +111,19 @@ public class BranchesController : ControllerBase
 
         if (request.IsPrimary)
         {
+            // ExecuteUpdateAsync cần giá trị thời gian được tính trước,
+            // không dùng trực tiếp DateTime.UtcNow trong biểu thức SQL.
+            // DbContext ánh xạ thời gian sang timestamp without time zone.
+            var updatedAtUtc = DateTime.SpecifyKind(
+                DateTime.UtcNow, DateTimeKind.Unspecified);
+
             await _db.Branches
                 .Where(b => b.IsPrimary)
                 .ExecuteUpdateAsync(
                     setters => setters
                         .SetProperty(b => b.IsPrimary, false)
                         .SetProperty(b => b.UpdatedAt,
-                            (DateTime?)DateTime.UtcNow),
+                            (DateTime?)updatedAtUtc),
                     ct);
         }
 
@@ -178,13 +184,19 @@ public class BranchesController : ControllerBase
 
         if (request.IsPrimary)
         {
+            // ExecuteUpdateAsync cần giá trị thời gian được tính trước,
+            // không dùng trực tiếp DateTime.UtcNow trong biểu thức SQL.
+            // DbContext ánh xạ thời gian sang timestamp without time zone.
+            var updatedAtUtc = DateTime.SpecifyKind(
+                DateTime.UtcNow, DateTimeKind.Unspecified);
+
             await _db.Branches
                 .Where(b => b.BranchId != id && b.IsPrimary)
                 .ExecuteUpdateAsync(
                     setters => setters
                         .SetProperty(b => b.IsPrimary, false)
                         .SetProperty(b => b.UpdatedAt,
-                            (DateTime?)DateTime.UtcNow),
+                            (DateTime?)updatedAtUtc),
                     ct);
         }
 
